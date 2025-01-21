@@ -8,6 +8,9 @@ function Atletas() {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [favorites, setFavorites] = useState([]); // Jogadores favoritos
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false); // Exibe apenas favoritos
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   const fetchPlayers = async () => {
     setLoading(true);
@@ -57,6 +60,7 @@ function Atletas() {
       );
 
       setSearchResults(response.data.body);
+      setIsSearchActive(true);
     } catch (err) {
       setError('Erro ao buscar jogadores: ' + err.message);
     } finally {
@@ -71,48 +75,86 @@ function Atletas() {
   const clearSearch = () => {
     setSearchFirstname('');
     setSearchLastname('');
-    setSearchResults(players); // Reseta os resultados para a lista completa
+    setSearchResults(players);
+    setIsSearchActive(false); // Desativa a pesquisa
   };
+
+  const toggleFavorite = (player) => {
+    setFavorites((prevFavorites) => {
+      if (prevFavorites.some((fav) => fav.playerId === player.playerId)) {
+        return prevFavorites.filter((fav) => fav.playerId !== player.playerId);
+      } else {
+        return [...prevFavorites, player];
+      }
+    });
+  };
+
+  const toggleShowFavorites = () => {
+    setShowOnlyFavorites((prev) => !prev);
+  };
+
+  const renderCardAtleta = (player) => {
+    const isFavorite = favorites.some((fav) => fav.playerId === player.playerId);
+
+    return (
+      <div
+        key={player.playerId}
+        style={{
+          border: '2px solid #ddd',
+          borderRadius: '10px',
+          padding: '15px',
+          margin: '10px',
+          maxWidth: '200px',
+          textAlign: 'center',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          backgroundColor: '#f9f9f9',
+        }}
+      >
+        <img
+          src={player.headshotUrl}
+          alt={`${player.firstName} ${player.lastName}`}
+          style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            marginBottom: '10px',
+          }}
+        />
+        <h3 style={{ fontSize: '1em', margin: '10px 0' }}>
+          {player.firstName} {player.lastName}
+        </h3>
+        <p><strong>Altura:</strong> {player.height}</p>
+        <p><strong>Peso:</strong> {player.weight}</p>
+        <p><strong>Posições:</strong> {player.positions}</p>
+        <p><strong>Data de Nascimento:</strong> {player.dateBorn}</p>
+        <p><strong>Lugar de Nascimento:</strong> {player.birthPlace}</p>
+        <p><strong>Draft:</strong> {player.draftInfo}</p>
+        <button
+          onClick={() => toggleFavorite(player)}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: isFavorite ? 'red' : 'green',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+          }}
+        >
+          {isFavorite ? 'Remover dos Favoritos' : 'Favoritar'}
+        </button>
+      </div>
+    )};
 
   if (loading) return <p>Carregando jogadores...</p>;
   if (error) return <p>Erro ao carregar dados: {error}</p>;
 
-  const renderCardAtleta = (player) => (
-    <div
-      key={player.playerId}
-      style={{
-        border: '2px solid #ddd',
-        borderRadius: '10px',
-        padding: '15px',
-        margin: '10px',
-        maxWidth: '200px',
-        textAlign: 'center',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#f9f9f9',
-      }}
-    >
-      <img
-        src={player.headshotUrl}
-        alt={`${player.firstName} ${player.lastName}`}
-        style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          objectFit: 'cover',
-          marginBottom: '10px',
-        }}
-      />
-      <h3 style={{ fontSize: '1em', margin: '10px 0' }}>
-        {player.firstName} {player.lastName}
-      </h3>
-      <p><strong>Altura:</strong> {player.height}</p>
-      <p><strong>Peso:</strong> {player.weight}</p>
-      <p><strong>Posições:</strong> {player.positions}</p>
-      <p><strong>Data de Nascimento:</strong> {player.dateBorn}</p>
-      <p><strong>Lugar de Nascimento:</strong> {player.birthPlace}</p>
-      <p><strong>Draft:</strong> {player.draftInfo}</p>
-    </div>
-  );
+  // Decide quais jogadores exibir com base no estado atual
+  const jogadoresExibidos = showOnlyFavorites
+    ? favorites
+    : (searchFirstname || searchLastname) && isSearchActive
+    ? searchResults
+    : players;
 
   return (
     <div style={{ padding: '20px' }}>
@@ -142,23 +184,16 @@ function Atletas() {
         <button onClick={clearSearch}>
           Limpar Pesquisa
         </button>
+        <button onClick={toggleShowFavorites}>
+          {showOnlyFavorites ? 'Exibir Todos' : 'Exibir Favoritos'}
+        </button>
       </div>
 
-      {/* Resultados da pesquisa */}
-      {searchResults.length > 0 && (
-        <div>
-          <h2>Resultados da Pesquisa</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {searchResults.map(renderCardAtleta)}
-          </div>
-        </div>
-      )}
-
-      {/* Lista inicial de jogadores */}
+      {/* Lista de jogadores */}
       <div>
-        <h2>Todos os Jogadores</h2>
+        <h2>{showOnlyFavorites ? 'Favoritos' : 'Jogadores'}</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {players.map(renderCardAtleta)}
+          {jogadoresExibidos.map(renderCardAtleta)}
         </div>
       </div>
     </div>
