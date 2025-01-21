@@ -1,11 +1,10 @@
-import logo from './logo.svg';
 import './App.css';
-import SportsData from './api/SportsData';
+import Atletas from './api/CardAtleta';
 
 function App() {
   return (
     <div className="App">
-      <SportsData /> {}
+      <Atletas /> {}
     </div>
   );
 }
